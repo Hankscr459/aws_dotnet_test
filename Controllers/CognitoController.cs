@@ -1,6 +1,7 @@
 using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
+using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Runtime;
 using Dtos.cognito;
 using Microsoft.AspNetCore.Mvc;
@@ -57,5 +58,31 @@ public class CognitoController : ControllerBase
 
         var res = await _cognitoService.SignUpAsync(signUpRequest);
         return new { success = true };
+    }
+
+    [HttpPost("aws/signin")]
+    public async Task<object> SignInAsync(SignInInput input)
+    {
+        string ClientId = Environment.GetEnvironmentVariable("AWS_Cognito_ClientId");
+        string poolId = Environment.GetEnvironmentVariable("AWS_Pool_Id");
+        CognitoUserPool pool = new CognitoUserPool(
+            poolId,
+            ClientId,
+            _cognitoService
+        );
+        CognitoUser user = new CognitoUser(
+            input.Email,
+            ClientId,
+            pool,
+            _cognitoService
+        );
+        InitiateSrpAuthRequest authRequest = new InitiateSrpAuthRequest()
+        {
+            Password = input.Password
+        };
+
+        AuthFlowResponse authResponse = await user.StartWithSrpAuthAsync(authRequest);
+
+        return new { success = true, data = authResponse };
     }
 }
