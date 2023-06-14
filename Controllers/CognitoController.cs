@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
@@ -6,6 +7,7 @@ using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Runtime;
 using Dtos.cognito;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace aws_test.Controllers;
 
@@ -107,5 +109,17 @@ public class CognitoController : ControllerBase
         AuthFlowResponse authResponse = await user.StartWithSrpAuthAsync(authRequest);
         var accessToken = authResponse.AuthenticationResult.AccessToken;
         return new { success = true, data = authResponse };
+    }
+
+    [HttpGet("ip")]
+    public object Ip () {
+        string localIP;
+        using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+        {
+            socket.Connect("8.8.8.8", 65530);
+            IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+            localIP = endPoint.Address.ToString();
+        }
+        return new { success = true, localIP = localIP };
     }
 }
